@@ -1,0 +1,11 @@
+# Only package.json, src/ and public/ go into the image (see Dockerfile).
+.git
+data
+test
+node_modules
+*.md
+.env
+.env.*
+docker-compose.yml
+docker-compose.override.yml
+.env.example

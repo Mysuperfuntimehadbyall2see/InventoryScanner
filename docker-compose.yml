@@ -1,0 +1,50 @@
+# Inventory Scanner. "docker compose up -d --build" builds the image and runs
+# it on http://localhost:3000. Data lives in ./data (must be writable by uid
+# 1000). For production, put it behind an HTTPS reverse proxy: the camera only
+# works over HTTPS (README.md, "Running it").
+#
+# Site-specific changes belong in docker-compose.override.yml, which compose
+# merges in automatically; keep this file as it is.
+name: inventory-scanner
+
+services:
+  inventory-scanner:
+    build: .
+    image: inventory-scanner:latest
+    container_name: inventory-scanner
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    # Optional API credentials for the Analyze page (DELL_*, CISCO_*). Keep
+    # .env out of git (it is in .gitignore). Without it, lookups are off.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: "3000"
+      DATA_DIR: /data
+      # "1" only when a reverse proxy is the only way in; it then supplies the
+      # client address in X-Forwarded-For.
+      TRUST_PROXY: "0"
+      DISPLAY_TIMEZONE: UTC
+      APP_SUBTITLE: ""
+    volumes:
+      # The SQLite database, data/scans.db. A bind mount, so it is easy to
+      # find, back up and inspect on the host.
+      - ./data:/data
+    # Hardening: nothing writable except /data and /tmp, no Linux
+    # capabilities, no privilege escalation, capped memory and processes.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    pids_limit: 100
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

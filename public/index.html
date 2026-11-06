@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Inventory Scanner</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-mark" src="/favicon.svg" alt="" width="32" height="32">
+      <div>
+        <h1>Inventory Scanner</h1>
+        <!--APP_SUBTITLE-->
+      </div>
+    </div>
+    <nav class="nav" aria-label="Pages">
+      <a class="nav-link" href="/" aria-current="page">Scan</a>
+      <a class="nav-link" href="/analyze">Analyze data</a>
+      <p class="connection" id="connection" data-state="ok" role="status">Connected</p>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="card session-card" aria-labelledby="sessionName">
+      <div class="session-main">
+        <p class="eyebrow">Session</p>
+        <h2 class="session-name" id="sessionName">No session chosen</h2>
+        <p class="session-meta" id="sessionMeta">Choose or create a session to start scanning.</p>
+      </div>
+      <div class="session-actions">
+        <button type="button" class="btn btn-quiet" id="switchSession">Switch session</button>
+        <button type="button" class="btn btn-quiet" id="newSession">New session</button>
+        <a class="btn" id="exportSession" href="/api/export.csv" download hidden>Export CSV</a>
+      </div>
+    </section>
+
+    <section class="card scan-card" id="scanCard" data-mode="scanner" data-ready="ready" aria-label="Scan">
+      <div class="modes" role="radiogroup" aria-label="How codes are entered">
+        <label class="mode"><input type="radio" name="mode" value="scanner"><span>Hand scanner</span></label>
+        <label class="mode"><input type="radio" name="mode" value="manual"><span>Manual</span></label>
+        <label class="mode"><input type="radio" name="mode" value="camera"><span>Camera</span></label>
+      </div>
+
+      <div class="keyboard-panel" id="keyboardPanel">
+        <button type="button" class="status" id="status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="statusText">Ready to scan</span>
+        </button>
+        <label class="scan-label" for="code">Barcode</label>
+        <input id="code" class="scan-input" type="text" maxlength="256"
+               autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+               enterkeyhint="done" aria-describedby="hint">
+        <div class="countdown" aria-hidden="true"><div class="countdown-bar" id="countdownBar"></div></div>
+        <p class="hint" id="hint" data-state=""></p>
+      </div>
+
+      <div class="camera-panel" id="cameraPanel" hidden>
+        <div class="camera-view" id="cameraView" data-state="off">
+          <video id="cameraVideo" playsinline muted autoplay></video>
+          <canvas id="cameraOverlay" aria-hidden="true"></canvas>
+          <div class="camera-idle" id="cameraIdle">
+            <button type="button" class="btn" id="cameraStart">Start camera</button>
+            <p class="camera-message" id="cameraMessage">Point the camera at a label. Every barcode it can read is listed below the picture.</p>
+          </div>
+        </div>
+        <div class="camera-controls">
+          <button type="button" class="btn btn-quiet" id="cameraStop" hidden>Stop camera</button>
+          <button type="button" class="btn btn-quiet" id="cameraTorch" aria-pressed="false" hidden>Light</button>
+          <label class="inline-field" id="cameraZoomBox" hidden>Zoom <input type="range" id="cameraZoom"></label>
+          <label class="inline-field" id="cameraSelectBox" hidden>Camera <select id="cameraSelect"></select></label>
+          <label class="check"><input type="checkbox" id="cameraAuto"><span>Save each new code automatically</span></label>
+        </div>
+        <div class="found">
+          <div class="found-head">
+            <h3>Codes in view</h3>
+            <button type="button" class="btn btn-quiet" id="foundClear">Clear list</button>
+          </div>
+          <ul class="found-list" id="foundList"></ul>
+          <p class="empty" id="foundEmpty">Nothing read yet.</p>
+        </div>
+      </div>
+
+      <div class="result" id="result" data-kind="idle" aria-live="polite" hidden>
+        <div class="result-text">
+          <p class="result-label" id="resultLabel"></p>
+          <p class="result-code" id="resultCode"></p>
+          <p class="result-detail" id="resultDetail"></p>
+        </div>
+        <button type="button" class="btn btn-quiet remove" id="resultRemove" hidden>Remove</button>
+      </div>
+    </section>
+
+    <section class="card context-card" aria-label="Saved with each scan">
+      <div class="field">
+        <div class="field-head">
+          <label for="location">Location <span class="optional">optional</span></label>
+          <label class="sticky"><input type="checkbox" id="stickyLocation" data-sticky="location"> Sticky</label>
+        </div>
+        <input id="location" class="detail" type="text" maxlength="100" autocomplete="off" placeholder="e.g. Warehouse bay 3">
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <label for="scannedBy">Scanned by <span class="optional">optional</span></label>
+          <label class="sticky"><input type="checkbox" id="stickyScannedBy" data-sticky="scannedBy"> Sticky</label>
+        </div>
+        <input id="scannedBy" class="detail" type="text" maxlength="100" autocomplete="off" placeholder="Your name">
+      </div>
+      <p class="note sticky-note"><strong>Sticky</strong> keeps a field's value for every scan that follows. Without it, the value is saved with the next scan only and then cleared. Press Enter or Esc in a field to go back to scanning.</p>
+    </section>
+
+    <details class="card more-card" id="moreDetails">
+      <summary>More details <span class="optional">optional: make, model, notes</span></summary>
+      <div class="more-grid">
+        <div class="field">
+          <div class="field-head">
+            <label for="make">Make</label>
+            <label class="sticky"><input type="checkbox" id="stickyMake" data-sticky="make"> Sticky</label>
+          </div>
+          <input id="make" class="detail" type="text" maxlength="100" autocomplete="off" placeholder="e.g. Dell">
+        </div>
+        <div class="field">
+          <div class="field-head">
+            <label for="model">Model</label>
+            <label class="sticky"><input type="checkbox" id="stickyModel" data-sticky="model"> Sticky</label>
+          </div>
+          <input id="model" class="detail" type="text" maxlength="100" autocomplete="off" placeholder="e.g. OptiPlex 7040">
+        </div>
+        <div class="field field-wide">
+          <div class="field-head">
+            <label for="notes">Notes</label>
+            <label class="sticky"><input type="checkbox" id="stickyNotes" data-sticky="notes"> Sticky</label>
+          </div>
+          <textarea id="notes" class="detail" rows="2" maxlength="1000" placeholder="e.g. cracked screen, no power cord"></textarea>
+        </div>
+      </div>
+      <p class="note">Saved with the next scan, like Location and Scanned by. Esc goes back to scanning.</p>
+    </details>
+
+    <section class="stats" aria-label="Totals for this session">
+      <div class="stat">
+        <span class="stat-value" id="statTotal">–</span>
+        <span class="stat-label">Scans in session</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="statUnique">–</span>
+        <span class="stat-label">Unique codes</span>
+      </div>
+      <div class="stat" id="statPendingBox" data-state="none">
+        <span class="stat-value" id="statPending">0</span>
+        <span class="stat-label">Waiting to save</span>
+      </div>
+    </section>
+
+    <section class="card recent-card" aria-labelledby="recentHeading">
+      <div class="recent-head">
+        <h2 id="recentHeading">Recent scans in this session</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="recent">
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">Code</th>
+              <th scope="col" class="col-how">How</th>
+              <th scope="col" class="col-extra">Location</th>
+              <th scope="col" class="col-extra">Scanned by</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="recentBody"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="recentEmpty">No scans in this session yet.</p>
+    </section>
+
+    <details class="card settings-card" id="settings">
+      <summary>Settings</summary>
+      <p class="last-entry" id="lastEntry">Last entry: scan or type something to see how it was read.</p>
+      <div class="settings-grid">
+        <label class="field">
+          <span>Hand scanner: save after this much quiet time (ms)</span>
+          <input id="setIdle" type="number" min="200" max="5000" step="100" inputmode="numeric">
+        </label>
+        <label class="check">
+          <input id="setSound" type="checkbox">
+          <span>Beep when a code is saved</span>
+        </label>
+      </div>
+      <div class="settings-actions">
+        <button type="button" class="btn btn-quiet" id="resetSettings">Restore defaults</button>
+        <p class="note">Kept in this browser only.</p>
+      </div>
+    </details>
+  </main>
+
+  <dialog class="sessions-dialog" id="sessionsDialog" aria-labelledby="sessionsHeading">
+    <div class="dialog-head">
+      <h2 id="sessionsHeading">Sessions</h2>
+      <button type="button" class="btn btn-quiet" id="closeSessions">Close</button>
+    </div>
+    <form class="new-session" id="newSessionForm" novalidate>
+      <label for="newSessionName">Start a new session</label>
+      <div class="row">
+        <input id="newSessionName" type="text" maxlength="80" autocomplete="off" placeholder="e.g. Surplus lot 14">
+        <button type="submit" class="btn">Create</button>
+      </div>
+      <p class="form-error" id="newSessionError" role="alert" hidden></p>
+    </form>
+    <h3 class="list-heading">Open a session</h3>
+    <div class="table-wrap">
+      <table class="session-list">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col" class="num">Scans</th>
+            <th scope="col" class="num col-extra">Unique</th>
+            <th scope="col" class="col-extra">Last scan</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody id="sessionList"></tbody>
+      </table>
+    </div>
+    <p class="empty" id="sessionListEmpty">No sessions yet. Create the first one above.</p>
+    <p class="dialog-foot"><a href="/api/export.csv" download>Download every session (CSV)</a></p>
+  </dialog>
+</body>
+</html>

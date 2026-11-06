@@ -1,0 +1,15 @@
+{
+  "package": "zxing-wasm",
+  "version": "3.1.6",
+  "license": "MIT (wrapper, see LICENSE); the decoder inside zxing_reader.wasm is zxing-cpp, Apache-2.0",
+  "source": "https://github.com/Sec-ant/zxing-wasm",
+  "zxingCppCommit": "2c3dcfeffa7878950a58c1703c86774a428b0c91",
+  "npmIntegrity": "sha512-mU7UNuvl+hOT+nlSOQTMHZ2tM8lRMsbjDIp5IO/+HmBl/FOq77q0OSZPJ3cm42A9c1MKU6Uve67FiGdkhsrT9g==",
+  "vendoredOn": "2026-11-06",
+  "sha256": {
+    "LICENSE": "fb506e4ade12d7a9efa67c9d76a9a28c8e15d347ca49a69e48e29b40b34ad2ab",
+    "es/reader/index.js": "368838c01a37be49b8daa833c3d9d253950fd9c29b8c98b9092018c9fd43b03c",
+    "es/share.js": "b595f0f4c1060b5e2a45aecf0331e576181dc281b168cb22e98f8db69d16457a",
+    "zxing_reader.wasm": "5003fb4b88c4fbd1fd518a2fd8c8ad365c519e183a08c03a322dddfea3cea84e"
+  }
+}

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Analyze data · Inventory Scanner</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/analyze.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-mark" src="/favicon.svg" alt="" width="32" height="32">
+      <div>
+        <h1>Inventory Scanner</h1>
+        <!--APP_SUBTITLE-->
+      </div>
+    </div>
+    <nav class="nav" aria-label="Pages">
+      <a class="nav-link" href="/">Scan</a>
+      <a class="nav-link" href="/analyze" aria-current="page">Analyze data</a>
+    </nav>
+  </header>
+
+  <main class="layout layout-wide">
+    <section class="card analyze-head" aria-labelledby="analyzeHeading">
+      <div class="analyze-pick">
+        <h2 id="analyzeHeading">Analyze data</h2>
+        <label class="inline-field" for="sessionSelect">Session <select id="sessionSelect"></select></label>
+        <p class="session-meta" id="analyzeMeta">Loading…</p>
+      </div>
+      <div class="session-actions">
+        <button type="button" class="btn" id="lookupButton" disabled>Look up online</button>
+        <button type="button" class="btn btn-quiet" id="refreshButton" disabled>Refresh all</button>
+        <a class="btn btn-quiet" id="analysisCsv" href="#" download hidden>Download analysis (CSV)</a>
+      </div>
+      <div class="progress" id="progress" hidden>
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        <p class="progress-text" id="progressText" role="status"></p>
+      </div>
+      <p class="form-error" id="analyzeError" role="alert" hidden></p>
+      <p class="note">
+        Each distinct code in the session is one row. The page recognises <strong>Dell service tags</strong> (7 letters
+        and digits, the QR code on a Dell label, or the Serial field of a GS1 code) and <strong>Cisco serial
+        numbers</strong> (11 characters, such as FOC1632X0AB; the digits give the year and week it was built).
+        <strong>Look up online</strong> asks Dell for model, ship date, warranty and factory specs, and Cisco for the
+        product ID and description, for everything not looked up yet. Answers are kept, so each item is asked once;
+        <strong>Refresh all</strong> asks again.
+      </p>
+    </section>
+
+    <section class="stats stats-4" aria-label="Summary">
+      <div class="stat"><span class="stat-value" id="sumCodes">–</span><span class="stat-label">Distinct codes</span></div>
+      <div class="stat"><span class="stat-value" id="sumFound">–</span><span class="stat-label">Identified online</span></div>
+      <div class="stat" data-tone="ok"><span class="stat-value" id="sumActive">–</span><span class="stat-label">Dell warranty active</span></div>
+      <div class="stat" data-tone="muted"><span class="stat-value" id="sumExpired">–</span><span class="stat-label">Dell warranty expired</span></div>
+    </section>
+
+    <section class="card" aria-labelledby="rowsHeading">
+      <div class="recent-head">
+        <h2 id="rowsHeading">Codes in this session</h2>
+        <label class="inline-field" for="filter">Filter <input id="filter" type="search" placeholder="code, model, tag, notes…" autocomplete="off"></label>
+      </div>
+      <div class="table-wrap">
+        <table class="recent analysis">
+          <thead>
+            <tr>
+              <th scope="col">Code</th>
+              <th scope="col">Tag / serial</th>
+              <th scope="col">Make / model</th>
+              <th scope="col">Shipped / built</th>
+              <th scope="col">Warranty</th>
+              <th scope="col">Specs / series</th>
+              <th scope="col">Description / notes</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="rowsEmpty">No scans in this session yet.</p>
+    </section>
+  </main>
+</body>
+</html>

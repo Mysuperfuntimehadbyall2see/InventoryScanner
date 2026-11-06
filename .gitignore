@@ -1,0 +1,6 @@
+# The database and anything else the running app writes.
+data/
+# Never commit environment files (there are none today; this is a guard).
+.env
+.env.*
+node_modules/
